@@ -1,12 +1,15 @@
 // ==UserScript==
 // @name         YouTube Fullscreen UI Cleaner & Fixer
 // @namespace    http://tampermonkey.net/
-// @version      1.1
-// @description  Cleans fullscreen grid UI on YouTube, fixes control bar, and disables scroll on video. Enforces removal of fullscreen overlay.
+// @version      0.3
+// @description  Cleans fullscreen UI on YouTube, removes overlays, disables scroll, and fixes control bar position.
 // @author       GekkeTovie
 // @match        *://www.youtube.com/*
 // @grant        none
+// @downloadURL  https://raw.githubusercontent.com/GekkeTovie/YoutubeFixer/main/YouTube%20Fullscreen%20UI%20Cleaner-0.2.user.js
+// @updateURL    https://raw.githubusercontent.com/GekkeTovie/YoutubeFixer/main/YouTube%20Fullscreen%20UI%20Cleaner-0.2.user.js
 // ==/UserScript==
+
 
 (function () {
     'use strict';

@@ -1,57 +1,84 @@
 // ==UserScript==
-// @name         YouTube Fullscreen UI Cleaner
+// @name         YouTube Fullscreen UI Cleaner & Fixer
 // @namespace    http://tampermonkey.net/
-// @version      0.2
-// @description  Removes fullscreen grid overlays, headers, and disables scroll on YouTube video in fullscreen. Also fixes chrome bottom bar.
+// @version      1.1
+// @description  Cleans fullscreen grid UI on YouTube, fixes control bar, and disables scroll on video. Enforces removal of fullscreen overlay.
 // @author       GekkeTovie
 // @match        *://www.youtube.com/*
 // @grant        none
 // ==/UserScript==
 
-(function() {
+(function () {
     'use strict';
 
-    function cleanYouTubeUI() {
-        // 1. Remove .ytp-fullscreen-grid-hover-overlay
-        const hoverOverlay = document.querySelector('.ytp-fullscreen-grid-hover-overlay');
-        if (hoverOverlay) hoverOverlay.remove();
-
-        // 2. Remove .ytp-fullscreen-grid-stills-container
-        const stillsContainer = document.querySelector('.ytp-fullscreen-grid-stills-container');
-        if (stillsContainer) stillsContainer.remove();
-
-        // 3. Remove .ytp-fullscreen-grid-header
-        const gridHeader = document.querySelector('.ytp-fullscreen-grid-header');
-        if (gridHeader) gridHeader.remove();
-
-        // 4. Prevent scroll on video element
-        const videoElement = document.querySelector('video.video-stream.html5-main-video');
-        if (videoElement && !videoElement.hasAttribute('data-scroll-blocked')) {
-            videoElement.addEventListener('wheel', (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-            }, { passive: false });
-            videoElement.setAttribute('data-scroll-blocked', 'true');
-        }
-
-        // 5. Apply CSS to .ytp-chrome-bottom
-        const chromeBottom = document.querySelector('.ytp-chrome-bottom');
-        if (chromeBottom) {
-            chromeBottom.style.setProperty('bottom', '0', 'important');
+    // Apply styles safely with optional !important
+    function applyStyles(selector, styles, importantProps = {}) {
+        const element = document.querySelector(selector);
+        if (element) {
+            for (const property in styles) {
+                if (styles.hasOwnProperty(property)) {
+                    element.style.setProperty(
+                        property,
+                        styles[property],
+                        importantProps[property] ? 'important' : ''
+                    );
+                }
+            }
         }
     }
 
-    // Run on DOMContentLoaded and page load
-    window.addEventListener('DOMContentLoaded', cleanYouTubeUI);
+    function blockScrollOnVideo() {
+        const video = document.querySelector('video.video-stream.html5-main-video');
+        if (video && !video.hasAttribute('data-scroll-blocked')) {
+            video.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            }, { passive: false });
+            video.setAttribute('data-scroll-blocked', 'true');
+        }
+    }
+
+    function cleanYouTubeUI() {
+        const selectorsToRemove = [
+            '.ytp-fullscreen-grid-hover-overlay',
+            '.ytp-fullscreen-grid-stills-container',
+            '.ytp-fullscreen-grid-header',
+            '.ytp-fullscreen-grid-main-content'
+        ];
+
+        // Force remove specific elements
+        selectorsToRemove.forEach(sel => {
+            const elements = document.querySelectorAll(sel);
+            elements.forEach(el => el.remove());
+        });
+
+        // Style adjustments
+        applyStyles('.ytp-chrome-controls', {
+            position: 'absolute',
+            bottom: '0',
+            left: '0',
+            right: '0'
+        });
+
+        applyStyles('.ytp-chrome-bottom', {
+            bottom: '0'
+        }, { bottom: true });
+
+        blockScrollOnVideo();
+    }
+
+    // MutationObserver to constantly delete re-inserted fullscreen overlay
+    const observer = new MutationObserver(() => {
+        const overlay = document.querySelector('.ytp-fullscreen-grid-hover-overlay');
+        if (overlay) overlay.remove();
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+        cleanYouTubeUI();
+        observer.observe(document.body, { childList: true, subtree: true });
+    });
+
     window.addEventListener('load', cleanYouTubeUI);
-
-    // Run every 7 seconds in case elements reappear
-    setInterval(cleanYouTubeUI, 7000);
-
-    // Also run on fullscreen change
     document.addEventListener('fullscreenchange', cleanYouTubeUI);
-
-    // Run on DOM mutations
-    const observer = new MutationObserver(cleanYouTubeUI);
-    observer.observe(document.body, { childList: true, subtree: true });
+    setInterval(cleanYouTubeUI, 7000);
 })();
